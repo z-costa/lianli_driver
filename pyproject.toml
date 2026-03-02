@@ -13,7 +13,8 @@ dependencies = []
 [project.optional-dependencies]
 lcd = ["Pillow>=10.0"]
 usb = ["pyusb>=1.2"]
-full = ["Pillow>=10.0", "pyusb>=1.2"]
+wireless = ["pyusb>=1.2", "pycryptodomex>=3.20"]
+full = ["Pillow>=10.0", "pyusb>=1.2", "pycryptodomex>=3.20"]
 
 [project.scripts]
 llctl = "lianli_driver.cli:main"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 from datetime import datetime
 from typing import Iterable
 
@@ -34,6 +35,24 @@ def load_image_as_rgb565(path: str, width: int, height: int) -> bytes:
     image = Image.open(path).convert("RGB")
     image = image.resize((width, height), Image.Resampling.LANCZOS)
     return rgb_image_to_rgb565_bytes(image.tobytes())
+
+
+def load_image_as_jpeg(path: str, width: int, height: int, quality: int = 90) -> bytes:
+    if not PIL_AVAILABLE:
+        raise RuntimeError("Pillow is required for image loading. Install with: pip install .[lcd]")
+    image = Image.open(path).convert("RGB")
+    image = image.resize((width, height), Image.Resampling.LANCZOS)
+    out = io.BytesIO()
+    # Use a conservative baseline JPEG profile for broader hardware decoder compatibility.
+    image.save(
+        out,
+        format="JPEG",
+        quality=max(1, min(100, int(quality))),
+        optimize=False,
+        progressive=False,
+        subsampling=0,
+    )
+    return out.getvalue()
 
 
 def generate_clock_frame_rgb565(width: int, height: int, timestamp: datetime | None = None) -> bytes:

@@ -6,13 +6,46 @@ const devicesEl = document.getElementById("devices");
 const lcdForm = document.getElementById("lcd-form");
 const lcdHidraw = document.getElementById("lcd-hidraw");
 const lcdImage = document.getElementById("lcd-image");
+const lcdVideo = document.getElementById("lcd-video");
 const lcdWidth = document.getElementById("lcd-width");
 const lcdHeight = document.getElementById("lcd-height");
+const lcdVideoFps = document.getElementById("lcd-video-fps");
+const lcdVideoSeconds = document.getElementById("lcd-video-seconds");
 const lcdUnsafe = document.getElementById("lcd-unsafe");
 const lcdProbeBtn = document.getElementById("lcd-probe-btn");
+const lcdVideoBtn = document.getElementById("lcd-video-btn");
 const lcdResult = document.getElementById("lcd-result");
 
 let appState = null;
+let selectedLcdTarget = "";
+let lastResolutionTarget = "";
+
+function inferLcdResolution(device) {
+  const merged = `${device.model || ""} ${device.product || ""} ${device.name || ""}`.toUpperCase();
+  if (
+    merged.includes("SL-LCD") ||
+    merged.includes("TL LCD") ||
+    merged.includes("TL-LCD") ||
+    merged.includes("SL LCD")
+  ) {
+    return { width: 400, height: 400 };
+  }
+  return { width: 480, height: 480 };
+}
+
+function applyRecommendedResolutionForTarget() {
+  const selected = lcdHidraw.selectedOptions && lcdHidraw.selectedOptions[0];
+  if (!selected) return;
+  const target = selected.value || "";
+  if (!target || target === lastResolutionTarget) return;
+  const recWidth = Number(selected.dataset.recWidth || 0);
+  const recHeight = Number(selected.dataset.recHeight || 0);
+  if (recWidth > 0 && recHeight > 0) {
+    lcdWidth.value = String(recWidth);
+    lcdHeight.value = String(recHeight);
+  }
+  lastResolutionTarget = target;
+}
 
 function setStatus(text) {
   statusPill.textContent = text;
@@ -161,6 +194,7 @@ function renderFans(snapshot, autoAssignments, lastAutoResults) {
 }
 
 function renderDevices(snapshot) {
+  const previousSelection = selectedLcdTarget || lcdHidraw.value || "";
   devicesEl.innerHTML = "";
   lcdHidraw.innerHTML = "";
 
@@ -191,6 +225,9 @@ function renderDevices(snapshot) {
     opt.value = device.path;
     const caps = (device.capabilities || []).length ? (device.capabilities || []).join(",") : "none";
     opt.textContent = `${device.path} (${device.model}) [hid caps:${caps}]`;
+    const rec = inferLcdResolution(device);
+    opt.dataset.recWidth = String(rec.width);
+    opt.dataset.recHeight = String(rec.height);
     lcdHidraw.appendChild(opt);
   }
 
@@ -216,6 +253,9 @@ function renderDevices(snapshot) {
     opt.value = device.id;
     const caps = (device.capabilities || []).length ? (device.capabilities || []).join(",") : "none";
     opt.textContent = `${device.id} (${device.model}) [usb caps:${caps}]`;
+    const rec = inferLcdResolution(device);
+    opt.dataset.recWidth = String(rec.width);
+    opt.dataset.recHeight = String(rec.height);
     lcdHidraw.appendChild(opt);
   }
 
@@ -225,6 +265,15 @@ function renderDevices(snapshot) {
     opt.textContent = "No LCD targets available";
     lcdHidraw.appendChild(opt);
   }
+
+  if (previousSelection) {
+    const hasPrevious = Array.from(lcdHidraw.options).some((opt) => opt.value === previousSelection);
+    if (hasPrevious) {
+      lcdHidraw.value = previousSelection;
+    }
+  }
+  selectedLcdTarget = lcdHidraw.value || "";
+  applyRecommendedResolutionForTarget();
 }
 
 async function refreshState() {
@@ -286,6 +335,43 @@ lcdProbeBtn.addEventListener("click", async () => {
     lcdResult.textContent = err.message;
     setStatus(`error: ${err.message}`);
   }
+});
+
+lcdVideoBtn.addEventListener("click", async () => {
+  try {
+    if (!lcdHidraw.value) {
+      throw new Error("No LCD target selected.");
+    }
+    if (!lcdHidraw.value.startsWith("usb:")) {
+      const usbOption = Array.from(lcdHidraw.options).find((opt) => String(opt.value).startsWith("usb:"));
+      if (usbOption) {
+        lcdHidraw.value = usbOption.value;
+      }
+    }
+    if (!lcdVideo.value) {
+      throw new Error("Video path is required.");
+    }
+    setStatus("streaming lcd video");
+    const payload = await httpPost("/api/lcd/video", {
+      target_id: lcdHidraw.value,
+      video_path: lcdVideo.value,
+      width: Number(lcdWidth.value),
+      height: Number(lcdHeight.value),
+      fps: Number(lcdVideoFps.value),
+      max_seconds: Number(lcdVideoSeconds.value),
+      unsafe_hid_writes: lcdUnsafe.checked,
+    });
+    lcdResult.textContent = JSON.stringify(payload.result, null, 2);
+    setStatus("video stream done");
+  } catch (err) {
+    lcdResult.textContent = err.message;
+    setStatus(`error: ${err.message}`);
+  }
+});
+
+lcdHidraw.addEventListener("change", () => {
+  selectedLcdTarget = lcdHidraw.value || "";
+  applyRecommendedResolutionForTarget();
 });
 
 refreshState();

@@ -186,9 +186,15 @@ def write_usb_bulk_packet(
             f"USB device not found on bus {device.bus_num:03d} address {device.dev_num:03d}."
         )
 
-    if dev.is_kernel_driver_active(0):  # pragma: no cover - env dependent
-        dev.detach_kernel_driver(0)
-    dev.set_configuration()
+    try:
+        if dev.is_kernel_driver_active(0):  # pragma: no cover - env dependent
+            dev.detach_kernel_driver(0)
+    except Exception:
+        pass
+    try:
+        dev.get_active_configuration()
+    except Exception:
+        dev.set_configuration()
     cfg = dev.get_active_configuration()
     intf = cfg[(0, 0)]
     usb_util.claim_interface(dev, intf.bInterfaceNumber)
@@ -218,9 +224,15 @@ def read_usb_bulk_packet(
             f"USB device not found on bus {device.bus_num:03d} address {device.dev_num:03d}."
         )
 
-    if dev.is_kernel_driver_active(0):  # pragma: no cover - env dependent
-        dev.detach_kernel_driver(0)
-    dev.set_configuration()
+    try:
+        if dev.is_kernel_driver_active(0):  # pragma: no cover - env dependent
+            dev.detach_kernel_driver(0)
+    except Exception:
+        pass
+    try:
+        dev.get_active_configuration()
+    except Exception:
+        dev.set_configuration()
     cfg = dev.get_active_configuration()
     intf = cfg[(0, 0)]
     usb_util.claim_interface(dev, intf.bInterfaceNumber)

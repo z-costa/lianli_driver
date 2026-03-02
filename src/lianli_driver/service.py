@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from .constants import DEFAULT_AUTO_INTERVAL_SECONDS
 from .device_manager import DeviceManager
 from .fan_curve import FanCurve, PRESET_CURVES
-from .lcd import load_image_as_rgb565
+from .lcd import load_image_as_jpeg, load_image_as_rgb565
 from .util import ActionResult
 
 
@@ -127,31 +127,37 @@ class LianLiService:
             target = target_id.strip()
             if not target:
                 return ActionResult(False, "Missing LCD target.")
+            upload_device: object | None = None
+            if target.startswith("/dev/hidraw"):
+                upload_device = self.manager.find_hid_device(target)
+                if upload_device is None:
+                    return ActionResult(False, f"Unknown HID device: {target}")
+            elif target.startswith("usb:"):
+                upload_device = self.manager.find_bulk_device(target)
+                if upload_device is None:
+                    return ActionResult(False, f"Unknown USB bulk device: {target}")
+            else:
+                # Legacy client fallback: try as hidraw first.
+                upload_device = self.manager.find_hid_device(target)
+                if upload_device is None:
+                    upload_device = self.manager.find_bulk_device(target)
+                if upload_device is None:
+                    return ActionResult(False, f"Unknown LCD target: {target}")
+
+            protocol = getattr(upload_device, "protocol", None)
+            lcd_protocol = getattr(protocol, "lcd", None)
+            lcd_mode = str(getattr(lcd_protocol, "mode", "")).lower()
+            use_jpeg = lcd_mode in {"wireless_jpg_des", "hydroshift_h264_guess", "jpg", "jpeg"}
+
             try:
-                frame = load_image_as_rgb565(image_path, width, height)
+                if use_jpeg:
+                    frame = load_image_as_jpeg(image_path, width, height)
+                else:
+                    frame = load_image_as_rgb565(image_path, width, height)
             except Exception as exc:  # noqa: BLE001
                 return ActionResult(False, f"Failed to load image: {exc}")
 
-            if target.startswith("/dev/hidraw"):
-                device = self.manager.find_hid_device(target)
-                if device is None:
-                    return ActionResult(False, f"Unknown HID device: {target}")
-                return device.upload_lcd_rgb565(frame, unsafe_hid_writes=unsafe_hid_writes)
-
-            if target.startswith("usb:"):
-                bulk_device = self.manager.find_bulk_device(target)
-                if bulk_device is None:
-                    return ActionResult(False, f"Unknown USB bulk device: {target}")
-                return bulk_device.upload_lcd_rgb565(frame, unsafe_hid_writes=unsafe_hid_writes)
-
-            # Legacy client fallback: try as hidraw first.
-            hid_device = self.manager.find_hid_device(target)
-            if hid_device is not None:
-                return hid_device.upload_lcd_rgb565(frame, unsafe_hid_writes=unsafe_hid_writes)
-            bulk_device = self.manager.find_bulk_device(target)
-            if bulk_device is not None:
-                return bulk_device.upload_lcd_rgb565(frame, unsafe_hid_writes=unsafe_hid_writes)
-            return ActionResult(False, f"Unknown LCD target: {target}")
+            return upload_device.upload_lcd_rgb565(frame, unsafe_hid_writes=unsafe_hid_writes)
 
     def probe_lcd_target(self, target_id: str) -> ActionResult:
         with self._lock:
@@ -164,6 +170,55 @@ class LianLiService:
             return ActionResult(
                 False,
                 "Probe currently supports only usb:* targets (bulk endpoints).",
+            )
+
+    def stream_lcd_video(
+        self,
+        target_id: str,
+        video_path: str,
+        width: int,
+        height: int,
+        fps: float,
+        max_seconds: float,
+        unsafe_hid_writes: bool = False,
+    ) -> ActionResult:
+        with self._lock:
+            target = target_id.strip()
+            if not target:
+                return ActionResult(False, "Missing LCD target.")
+
+            bulk_device = None
+            if target.startswith("usb:"):
+                bulk_device = self.manager.find_bulk_device(target)
+                if bulk_device is None:
+                    return ActionResult(False, f"Unknown USB bulk device: {target}")
+            else:
+                # UI/legacy fallback: if a hidraw target is selected, automatically
+                # map to the first HydroShift-capable USB bulk device.
+                hydroshift_candidates = [
+                    d
+                    for d in self.manager.snapshot.bulk_devices
+                    if d.protocol is not None
+                    and d.protocol.lcd is not None
+                    and d.protocol.lcd.mode.lower() == "hydroshift_h264_guess"
+                ]
+                if len(hydroshift_candidates) == 1:
+                    bulk_device = hydroshift_candidates[0]
+                else:
+                    usb_targets = [d.usb.id for d in self.manager.snapshot.bulk_devices]
+                    msg = "Video streaming currently supports only usb:* targets."
+                    if usb_targets:
+                        msg += f" Available targets: {', '.join(usb_targets)}"
+                    return ActionResult(False, msg)
+
+            assert bulk_device is not None
+            return bulk_device.stream_lcd_video(
+                video_path=video_path,
+                width=width,
+                height=height,
+                fps=fps,
+                max_seconds=max_seconds,
+                unsafe_hid_writes=unsafe_hid_writes,
             )
 
     def start_auto_loop(self) -> None:
@@ -293,6 +348,26 @@ class ApiHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/lcd/probe":
             target_id = str(body.get("target_id", ""))
             result = self.service.probe_lcd_target(target_id=target_id)
+            self._respond_action(result)
+            return
+
+        if parsed.path == "/api/lcd/video":
+            target_id = str(body.get("target_id", ""))
+            video_path = str(body.get("video_path", ""))
+            width = int(body.get("width", 480))
+            height = int(body.get("height", 480))
+            fps = float(body.get("fps", 12.0))
+            max_seconds = float(body.get("max_seconds", 10.0))
+            unsafe = bool(body.get("unsafe_hid_writes", False))
+            result = self.service.stream_lcd_video(
+                target_id=target_id,
+                video_path=video_path,
+                width=width,
+                height=height,
+                fps=fps,
+                max_seconds=max_seconds,
+                unsafe_hid_writes=unsafe,
+            )
             self._respond_action(result)
             return
 

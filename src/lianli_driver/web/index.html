@@ -48,6 +48,10 @@
             <input id="lcd-image" type="text" placeholder="/path/to/frame.png" />
           </label>
           <label>
+            Video path (HydroShift)
+            <input id="lcd-video" type="text" placeholder="/path/to/clip.mp4" />
+          </label>
+          <label>
             Width
             <input id="lcd-width" type="number" value="480" min="16" />
           </label>
@@ -55,11 +59,20 @@
             Height
             <input id="lcd-height" type="number" value="480" min="16" />
           </label>
+          <label>
+            Stream FPS
+            <input id="lcd-video-fps" type="number" value="12" min="1" step="1" />
+          </label>
+          <label>
+            Stream Seconds
+            <input id="lcd-video-seconds" type="number" value="10" min="1" step="1" />
+          </label>
           <label class="checkbox">
             <input id="lcd-unsafe" type="checkbox" />
             allow unsafe HID writes
           </label>
           <button type="submit">Upload Frame</button>
+          <button id="lcd-video-btn" type="button">Stream Video</button>
           <button id="lcd-probe-btn" type="button">Probe Target</button>
         </form>
         <pre id="lcd-result"></pre>

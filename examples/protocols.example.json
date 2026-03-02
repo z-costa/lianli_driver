@@ -33,14 +33,14 @@
     "out_endpoint": 1,
     "in_endpoint": 129,
     "packet_size": 512,
-    "notes": "Example raw stream mode. Replace with verified protocol.",
+    "notes": "Experimental HydroShift path: wireless JPEG + GA-II Type-B stream fallback.",
     "lcd": {
       "begin": "",
       "chunk_prefix": "",
       "end": "",
       "chunk_data_size": 512,
       "include_sequence_le16": false,
-      "mode": "raw"
+      "mode": "hydroshift_h264_guess"
     }
   }
 }

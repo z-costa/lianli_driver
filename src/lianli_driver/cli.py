@@ -50,6 +50,19 @@ def build_parser() -> argparse.ArgumentParser:
     probe = sub.add_parser("lcd-probe", help="Probe LCD command channel on USB bulk targets.")
     probe.add_argument("--target", required=True, help="e.g. usb:001:003")
 
+    video = sub.add_parser("lcd-video", help="Stream video to HydroShift/USB bulk LCD targets.")
+    video.add_argument("--target", required=True, help="e.g. usb:001:003")
+    video.add_argument("--video", required=True, help="Path to video file (mp4/webm/mkv/gif).")
+    video.add_argument("--width", type=int, default=480)
+    video.add_argument("--height", type=int, default=480)
+    video.add_argument("--fps", type=float, default=12.0)
+    video.add_argument("--seconds", type=float, default=10.0)
+    video.add_argument(
+        "--unsafe-hid-writes",
+        action="store_true",
+        help="Allow sending unverified protocol packets to HID/USB targets.",
+    )
+
     return parser
 
 
@@ -90,6 +103,19 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "lcd-probe":
         result = service.probe_lcd_target(args.target)
+        _json_print(result.to_dict())
+        return 0 if result.success else 1
+
+    if args.command == "lcd-video":
+        result = service.stream_lcd_video(
+            target_id=args.target,
+            video_path=args.video,
+            width=args.width,
+            height=args.height,
+            fps=args.fps,
+            max_seconds=args.seconds,
+            unsafe_hid_writes=args.unsafe_hid_writes,
+        )
         _json_print(result.to_dict())
         return 0 if result.success else 1
 

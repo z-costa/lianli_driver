@@ -67,8 +67,16 @@ def _builtin_profiles() -> dict[str, HidProtocolProfile]:
             in_endpoint=0x81,
             packet_size=512,
             notes=(
-                "Bulk USB transport detected. Static image protocol is not public; "
-                "GA II family appears to use host-streamed video."
+                "Experimental HydroShift path: wireless-compatible JPEG handshake plus "
+                "GA-II Type-B stream packet fallback."
+            ),
+            lcd=LcdProtocol(
+                begin=b"",
+                chunk_prefix=b"",
+                end=b"",
+                chunk_data_size=512,
+                include_sequence_le16=False,
+                mode="hydroshift_h264_guess",
             ),
         ),
         "1cbe:0005": HidProtocolProfile(
@@ -77,7 +85,31 @@ def _builtin_profiles() -> dict[str, HidProtocolProfile]:
             out_endpoint=0x01,
             in_endpoint=0x81,
             packet_size=512,
-            notes="Bulk USB transport detected for SL-LCD wireless receiver.",
+            notes="Encrypted JPEG upload path for SL-LCD wireless receiver.",
+            lcd=LcdProtocol(
+                begin=b"",
+                chunk_prefix=b"",
+                end=b"",
+                chunk_data_size=512,
+                include_sequence_le16=False,
+                mode="wireless_jpg_des",
+            ),
+        ),
+        "1cbe:0006": HidProtocolProfile(
+            name="TL-LCD Wireless-1.3",
+            transport="usb_bulk",
+            out_endpoint=0x01,
+            in_endpoint=0x81,
+            packet_size=512,
+            notes="Encrypted JPEG upload path for TL-LCD wireless receiver.",
+            lcd=LcdProtocol(
+                begin=b"",
+                chunk_prefix=b"",
+                end=b"",
+                chunk_data_size=512,
+                include_sequence_le16=False,
+                mode="wireless_jpg_des",
+            ),
         ),
         "0416:8040": HidProtocolProfile(
             name="SLV3TX Wireless TX",
