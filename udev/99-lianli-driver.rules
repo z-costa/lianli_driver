@@ -1,0 +1,5 @@
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0cf2", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="2107", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1cbe", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="0416", MODE="0660", GROUP="plugdev", TAG+="uaccess"

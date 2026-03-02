@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lian Li Linux Control</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Lian Li Linux Control</h1>
+          <p>Ubuntu 24.04 fan + LCD control service</p>
+        </div>
+        <div class="actions">
+          <button id="refresh-btn">Refresh Hardware</button>
+          <span id="status-pill">idle</span>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>Temperature Sensors</h2>
+        <div id="sensors" class="grid sensors-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Fan Channels</h2>
+        <div id="fans" class="grid fan-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Lian Li USB Devices</h2>
+        <div id="devices" class="grid device-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>LCD Upload</h2>
+        <form id="lcd-form" class="lcd-form">
+          <label>
+            LCD target
+            <select id="lcd-hidraw"></select>
+          </label>
+          <label>
+            Image path
+            <input id="lcd-image" type="text" placeholder="/path/to/frame.png" />
+          </label>
+          <label>
+            Width
+            <input id="lcd-width" type="number" value="480" min="16" />
+          </label>
+          <label>
+            Height
+            <input id="lcd-height" type="number" value="480" min="16" />
+          </label>
+          <label class="checkbox">
+            <input id="lcd-unsafe" type="checkbox" />
+            allow unsafe HID writes
+          </label>
+          <button type="submit">Upload Frame</button>
+          <button id="lcd-probe-btn" type="button">Probe Target</button>
+        </form>
+        <pre id="lcd-result"></pre>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

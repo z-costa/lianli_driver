@@ -1,0 +1,46 @@
+{
+  "0cf2:a102": {
+    "name": "UNI FAN TL Controller",
+    "transport": "hid",
+    "report_size": 64,
+    "report_id": 0,
+    "lcd": {
+      "begin": "A5 5A 01 00",
+      "chunk_prefix": "A5 5A 02",
+      "end": "A5 5A 03 00",
+      "chunk_data_size": 56,
+      "include_sequence_le16": true,
+      "mode": "framed"
+    }
+  },
+  "0cf2:a200": {
+    "name": "HydroShift II LCD-C",
+    "transport": "hid",
+    "report_size": 64,
+    "report_id": 0,
+    "lcd": {
+      "begin": "",
+      "chunk_prefix": "",
+      "end": "",
+      "chunk_data_size": 56,
+      "include_sequence_le16": true,
+      "mode": "framed"
+    }
+  },
+  "1cbe:a021": {
+    "name": "HydroShift II H2 USB",
+    "transport": "usb_bulk",
+    "out_endpoint": 1,
+    "in_endpoint": 129,
+    "packet_size": 512,
+    "notes": "Example raw stream mode. Replace with verified protocol.",
+    "lcd": {
+      "begin": "",
+      "chunk_prefix": "",
+      "end": "",
+      "chunk_data_size": 512,
+      "include_sequence_le16": false,
+      "mode": "raw"
+    }
+  }
+}

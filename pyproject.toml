@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lianli-driver"
+version = "0.1.0"
+description = "Linux-native control service for Lian Li cooling and LCD devices."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+lcd = ["Pillow>=10.0"]
+usb = ["pyusb>=1.2"]
+full = ["Pillow>=10.0", "pyusb>=1.2"]
+
+[project.scripts]
+llctl = "lianli_driver.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lianli_driver = ["web/*.html", "web/*.js", "web/*.css"]

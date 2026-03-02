@@ -1,0 +1,13 @@
+[Unit]
+Description=Lian Li Linux Control Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ze/lianli_driver
+ExecStart=/usr/bin/env llctl service --host 127.0.0.1 --port 1787
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
